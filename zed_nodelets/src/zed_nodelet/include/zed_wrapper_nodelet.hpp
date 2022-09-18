@@ -679,6 +679,7 @@ private:
 
     // Point cloud variables
     sl::Mat mCloud;
+    sl::Mat mNormals;
     sl::FusedPointCloud mFusedPC;
     ros::Time mPointCloudTime;
 

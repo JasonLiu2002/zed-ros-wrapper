@@ -1985,16 +1985,32 @@ void ZEDWrapperNodelet::publishPointCloud()
         pointcloudMsg->height = mMatResolDepth.height;
 
         sensor_msgs::PointCloud2Modifier modifier(*pointcloudMsg);
-        modifier.setPointCloud2Fields(4, "x", 1, sensor_msgs::PointField::FLOAT32, "y", 1, sensor_msgs::PointField::FLOAT32,
-            "z", 1, sensor_msgs::PointField::FLOAT32, "rgb", 1, sensor_msgs::PointField::FLOAT32);
+        modifier.setPointCloud2Fields(7, "x", 1, sensor_msgs::PointField::FLOAT32, "y", 1, sensor_msgs::PointField::FLOAT32,
+            "z", 1, sensor_msgs::PointField::FLOAT32, "rgb", 1, sensor_msgs::PointField::FLOAT32,
+            "normal_x", 1, sensor_msgs::PointField::FLOAT32, "normal_y", 1, sensor_msgs::PointField::FLOAT32,
+            "normal_z", 1, sensor_msgs::PointField::FLOAT32);
     }
 
     // Data copy
     sl::Vector4<float>* cpu_cloud = mCloud.getPtr<sl::float4>();
-    float* ptCloudPtr = (float*)(&pointcloudMsg->data[0]);
+    sl::Vector4<float>* cpu_normals = mNormals.getPtr<sl::float4>();
 
-    // We can do a direct memcpy since data organization is the same
-    memcpy(ptCloudPtr, (float*)cpu_cloud, 4 * ptsCount * sizeof(float));
+    float* cpu_cloud_ptr = (float*) cpu_cloud;
+    float* cpu_normals_ptr = (float*) cpu_normals;
+
+    float* ptCloudPtr = (float*)(&pointcloudMsg->data[0]);
+    for(int i = 0; i < ptsCount; ++i) {
+        // Copy the XYZRGBA from the point cloud to the message
+        memcpy(ptCloudPtr, cpu_cloud_ptr, 4 * sizeof(float));
+
+        ptCloudPtr += 4;  // Increment the message pointer by 4 floats
+        cpu_cloud_ptr += 4; // Increment the point cloud pointer by 4 floats (vec4)
+
+        // Copy the normals from the normal map to the message
+        memcpy(ptCloudPtr, cpu_normals_ptr, 3 * sizeof(float));
+        ptCloudPtr += 3;  // Increment the message pointer by 3 floats
+        cpu_normals_ptr += 4;  // Increment the normal map pointer by 4 floats (vec4)
+    }
 
     // Pointcloud publishing
     mPubCloud.publish(pointcloudMsg);
@@ -3507,7 +3523,7 @@ void ZEDWrapperNodelet::device_poll_thread_func()
 
                 if (lock.try_lock()) {
                     mZed.retrieveMeasure(mCloud, sl::MEASURE::XYZBGRA, sl::MEM::CPU, mMatResolDepth);
-
+                    mZed.retrieveMeasure(mNormals, sl::MEASURE::NORMALS, sl::MEM::CPU, mMatResolDepth);
                     mPointCloudFrameId = mDepthFrameId;
                     mPointCloudTime = stamp;
 
