@@ -1985,10 +1985,15 @@ void ZEDWrapperNodelet::publishPointCloud()
         pointcloudMsg->height = mMatResolDepth.height;
 
         sensor_msgs::PointCloud2Modifier modifier(*pointcloudMsg);
-        modifier.setPointCloud2Fields(7, "x", 1, sensor_msgs::PointField::FLOAT32, "y", 1, sensor_msgs::PointField::FLOAT32,
-            "z", 1, sensor_msgs::PointField::FLOAT32, "rgb", 1, sensor_msgs::PointField::FLOAT32,
-            "normal_x", 1, sensor_msgs::PointField::FLOAT32, "normal_y", 1, sensor_msgs::PointField::FLOAT32,
-            "normal_z", 1, sensor_msgs::PointField::FLOAT32);
+        modifier.setPointCloud2Fields(8,
+                                      "x", 1, sensor_msgs::PointField::FLOAT32,
+                                      "y", 1, sensor_msgs::PointField::FLOAT32,
+                                      "z", 1, sensor_msgs::PointField::FLOAT32,
+                                      "rgb", 1, sensor_msgs::PointField::FLOAT32,
+                                      "normal_x", 1, sensor_msgs::PointField::FLOAT32,
+                                      "normal_y", 1, sensor_msgs::PointField::FLOAT32,
+                                      "normal_z", 1, sensor_msgs::PointField::FLOAT32,
+                                      "curvature", 1, sensor_msgs::PointField::FLOAT32);
     }
 
     // Data copy
@@ -2010,6 +2015,8 @@ void ZEDWrapperNodelet::publishPointCloud()
         memcpy(ptCloudPtr, cpu_normals_ptr, 3 * sizeof(float));
         ptCloudPtr += 3;  // Increment the message pointer by 3 floats
         cpu_normals_ptr += 4;  // Increment the normal map pointer by 4 floats (vec4)
+
+        ptCloudPtr += 1;
     }
 
     // Pointcloud publishing
